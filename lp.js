@@ -4,25 +4,19 @@
   var svg = d3.select("body").append("svg").attr("width",width).attr("height",height);
   
   var dataset = [ {a: 10, b: 10, x: 100, y: 50} ];
+  
+  var isCreating = false;
 
   function getX1(d) {
-    if (d.a == 0) {
-      return d.x;
-    }
-    
-    if (d.b > 10 * Math.abs(d.a)) {
+    if (d.b > 5 * Math.abs(d.a)) {
       return (d.x * d.a + d.y * d.b + 10 * d.b) / d.a;
     } else {
       return -10;
     }
   }
   
-  function getX2(d) {
-    if (d.a == 0) {
-      return d.x;
-    }
-    
-    if (d.b > 10 * Math.abs(d.a)) {
+  function getX2(d) {    
+    if (d.b > 5 * Math.abs(d.a)) {
       return (d.x * d.a + d.y * d.b - (width + 10) * d.b) / d.a;
     } else {
       return width + 10;
@@ -30,15 +24,15 @@
   }
   
   function getY1(d) {
-    if (d.a == 0) {
-      return -10;
+    if (d.b == 0) {
+      return d.y;
     }
     return (d.x * d.a + d.y * d.b - getX1(d) * d.a) / d.b;
   }
   
   function getY2(d) {
-    if (d.a == 0) {
-      return height + 10;
+    if (d.b == 0) {
+      return d.y;
     }
     return (d.x * d.a + d.y * d.b - getX2(d) * d.a) / d.b;
   }
@@ -46,6 +40,7 @@
   svg.append("defs").append("marker").attr("id","Triangle").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY","5").attr("markerUnits","strokeWidth").attr("markerWidth","10").attr("markerHeight","10").attr("orient","auto").append("path").attr("d","M 0 0 L 10 5 L 0 10 z").attr("fill", "rgba(128,128,128,0.4)");
   
   function dragmovebase (d) {
+    d3.event.sourceEvent.stopPropagation;
     var p = d3.select(this).datum();
     p.x = d3.event.x;
     p.y = d3.event.y;
@@ -53,6 +48,7 @@
   }
   
   function dragmovetip(d) {
+    d3.event.sourceEvent.stopPropagation;
     var p = d3.select(this).datum();
     p.a = d3.event.x - p.x;
     p.b = d3.event.y - p.y;
@@ -80,9 +76,13 @@
     basePts.enter().append("circle").attr("cx", function(d) {return d.x;}).attr("cy", function(d) {return d.y;}).attr("r", 3).attr("class", "base").call(dragbase);
     tipPts.enter().append("circle").attr("cx", function(d) {return d.x + d.a;}).attr("cy", function(d) {return d.y + d.b;}).attr("r", 3).attr("class", "tip").call(dragtip);
     pointers.enter().append("line").attr("x1", function(d) {return d.x;}).attr("y1", function(d) {return d.y;}).attr("x2", function (d) {return d.x + d.a;}).attr("y2", function (d) {return d.y + d.b;}).attr("stroke", "black").attr("class", "pointer").attr("marker-end", "url(#Triangle)");
+    
+    lines.exit().remove();
+    basePts.exit().remove();
+    tipPts.exit().remove();
+    pointers.exit().remove();
   }
   
   update();
-
   
 }).call(this);

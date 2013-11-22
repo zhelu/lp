@@ -1,9 +1,11 @@
 line.line {
-  stroke: steelblue
+  stroke: steelblue;
+  stroke-width: 2px;
 }
 
 line.pointer {
-  stroke: steelblue
+  stroke: steelblue;
+  stroke-width: 2px;
 }
 
 circle.base {
