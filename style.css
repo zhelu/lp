@@ -1,0 +1,19 @@
+line.line {
+  stroke: steelblue
+}
+
+line.pointer {
+  stroke: steelblue
+}
+
+circle.base {
+  stroke: steelblue;
+  stroke-width: 1.5px;
+  fill: lightsteelblue;
+}
+
+circle.tip {
+  stroke: steelblue;
+  stroke-width: 1.5px;
+  fill: lightsteelblue;
+}
