@@ -1,21 +1,40 @@
-line.line {
+line {
   stroke: steelblue;
   stroke-width: 2px;
 }
 
-line.pointer {
-  stroke: steelblue;
-  stroke-width: 2px;
+line.objective {
+  stroke: rgba(135, 205, 235, 0.6) !important;
+  stroke-width: 5px !important;
 }
 
-circle.base {
+line.upper {
+  stroke: red !important;
+}
+
+line.lower {
+  stroke: green !important;
+}
+
+circle.baseObjective {
   stroke: steelblue;
   stroke-width: 1.5px;
   fill: lightsteelblue;
+  
 }
 
-circle.tip {
+circle {
   stroke: steelblue;
   stroke-width: 1.5px;
-  fill: lightsteelblue;
+  fill: lightsteelblue;  
+}
+
+.dragging {
+  fill: salmon !important;
+}
+
+text.objective {
+  font-family: sans-serif;
+  font-size: 20px;
+  fill: rgba(0,0,0,0.5);
 }
