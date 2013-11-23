@@ -234,6 +234,6 @@
   svg.on("click", click).on("mousedown", mousedown);
   d3.select(window).on("keyup", keyup).on("keydown", keydown);
   
-  d3.select("#buttonStart").on("click", function() { dataset = []; update();});
+  d3.select("#buttonStart").on("click", function() { dataset = []; objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}]; update();});
 
 }).call(this);
