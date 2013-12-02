@@ -3,6 +3,10 @@ line {
   stroke-width: 2px;
 }
 
+line.pointer {
+  opacity: 0.7
+}
+
 line.objective {
   stroke: rgba(135, 205, 235, 0.6) !important;
   stroke-width: 5px !important;
@@ -16,6 +20,11 @@ line.lower {
   stroke: green !important;
 }
 
+line.inactive {
+  stroke-width: 1px;
+  stroke: lightgray !important;
+}
+
 circle.baseObjective {
   stroke: steelblue;
   stroke-width: 1.5px;
@@ -23,10 +32,19 @@ circle.baseObjective {
   
 }
 
+div.trace {
+  border : 2px solid;
+  border-radius : 5px;
+}
+
 circle {
   stroke: steelblue;
   stroke-width: 1.5px;
   fill: lightsteelblue;  
+}
+
+circle.pair {
+  fill: rgba(0,0,0,0);
 }
 
 .dragging {

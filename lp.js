@@ -7,6 +7,23 @@
   var _clickX, _clickY;
   var dataset = [];
   var objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}];
+  var algorithmRunning = false;
+  var algorithmFinished = false;
+  var algorithmStep = 0;
+  var upperPairs = [];
+  var lowerPairs = [];
+  
+  function reset() {
+    algorithmRunning = false;
+    algorithmFinished = false;
+    algorithmStep = 0;
+    upperPairs = [];
+    lowerPairs = [];
+    d3.select("#buttonGo").attr("value", "Go");
+    d3.select("#trace").remove();
+    d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
+
+  }
 
   function innerProduct(p1, p2) {
     return p1.a * p2.a + p1.b * p2.b;
@@ -88,6 +105,9 @@
   }
   
   function mousedown() {
+    if (algorithmRunning) {
+      return;
+    }
     d3.event.preventDefault();
     _clickX = d3.mouse(this)[0];
     _clickY = d3.mouse(this)[1];
@@ -98,6 +118,9 @@
   svg.select("defs").append("marker").attr("id", "Triangle2").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY", "5").attr("markerUnits", "strokeWidth").attr("markerWidth", "5").attr("markerHeight", "5").attr("orient", "auto").append("path").attr("d", "M 0 0 L 10 5 L 0 10 z").attr("fill", "rgba(135,206,235,0.6)");
 
   function dragmovebase(d) {
+    if (algorithmRunning) {
+      return;
+    }
     d3.event.sourceEvent.stopPropagation
     var p = d3.select(this).datum();
     p.x = d3.event.x;
@@ -106,6 +129,9 @@
   }
 
   function dragmovetip(d) {
+    if (algorithmRunning) {
+      return;
+    }
     d3.event.sourceEvent.stopPropagation
     var p = d3.select(this).datum();
     p.a = d3.event.x - p.x;
@@ -114,6 +140,9 @@
   }
 
   function dragstarted(d) {
+    if (algorithmRunning) {
+      return;
+    }
     d3.event.sourceEvent.stopPropagation;
     if (deleteLine) {
       var p = d3.select(this).datum();
@@ -128,17 +157,23 @@
   }
   
   function dragstartedObjective(d) {
+    if (algorithmRunning) {
+      return;
+    }
     d3.event.sourceEvent.stopPropagation;
     d3.select(this).classed("dragging", true);
   }
 
   function dragended(d) {
+    if (algorithmRunning) {
+      return;
+    }
     d3.select(this).classed("dragging", false);
     update();
   }
 
   function click() {
-    if (d3.event.defaultPrevented || deleteLine) {
+    if (d3.event.defaultPrevented || deleteLine || algorithmRunning) {
       return;
     }
     var _a = d3.mouse(this)[0] - _clickX;
@@ -152,6 +187,7 @@
       y : _clickY,
       a : _a,
       b : _b,
+      active : true
     });
     update();
   }
@@ -162,7 +198,9 @@
   var dragObjectiveTip = d3.behavior.drag().on("drag", dragmovetip).on("dragstart", dragstartedObjective).on("dragend", dragended);
 
   function updateLineColor(obj) {
-    return obj.classed("upper", function (d) {return (innerProduct (d, objective[0]) > 0);}).classed("lower", function (d) {return (innerProduct (d, objective[0]) < 0);});
+    return obj.classed("upper", function (d) {return (innerProduct (d, objective[0]) > 0 && d.active);})
+              .classed("lower", function (d) {return (innerProduct (d, objective[0]) < 0 && d.active);})
+              .classed("inactive", function (d) {return !d.active;});
   }
 
   function updateLine(obj) {
@@ -229,11 +267,45 @@
     updateTip(objectiveTip.enter().append("circle"), 5).classed("objectiveTip", true).call(dragObjectiveTip);
   }
 
+  function trace(text) {
+    d3.select("#trace").append("p").text(text);
+  }
+
+  function stepAlgorithm() {
+    if (algorithmFinished) return;
+    if (d3.selectAll(".lower").size() == 0) {
+      algorithmFinished = true;
+      trace("Region is unbounded in the direction of the objective function");
+      return;
+    };
+    switch (algorithmStep) {
+      case 0:
+        trace("Pairing lines");
+        break;
+      case 1:
+        trace("Finding median");
+        break;
+    }
+  }
+
   update();
 
   svg.on("click", click).on("mousedown", mousedown);
   d3.select(window).on("keyup", keyup).on("keydown", keydown);
+  d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace");
   
-  d3.select("#buttonStart").on("click", function() { dataset = []; objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}]; update();});
+  d3.select("#buttonStart").on("click",
+                                function() {
+                                  dataset = [];
+                                  objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}];
+                                  update();
+                                  reset();
+                                });
+  d3.select("#buttonGo").on("click",
+                            function() { 
+                              algorithmRunning = true; 
+                              stepAlgorithm(); 
+                              this.value = "Step";
+                            });
 
 }).call(this);
