@@ -22,7 +22,8 @@
     d3.select("#buttonGo").attr("value", "Go");
     d3.select("#trace").remove();
     d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
-
+    d3.selectAll("circle.pair").remove();
+    d3.select("line.median").remove();
   }
 
   function innerProduct(p1, p2) {
@@ -179,13 +180,13 @@
     var _a = d3.mouse(this)[0] - _clickX;
     var _b = d3.mouse(this)[1] - _clickY;
     if (_a == 0 && _b == 0) {
-      _a = 20;
+      _a = 20 + Math.random() / 1000;
       _b = 20;
     }
     dataset.push({
       x : _clickX,
       y : _clickY,
-      a : _a,
+      a : _a + Math.random() / 1000,
       b : _b,
       active : true
     });
@@ -271,19 +272,98 @@
     d3.select("#trace").append("p").text(text);
   }
 
+  function findIntersection(d) {
+    var a1 = d[0].a;
+    var a2 = d[1].a;
+    var b1 = d[0].b;
+    var b2 = d[1].b;
+    var c1 = d[0].x * a1 + d[0].y * b1;
+    var c2 = d[1].x * a2 + d[1].y * b2;
+    var invDet = 1 / (a1 * b2 - b1 * a2);
+    var x = invDet * (b2 * c1 - b1 * c2);
+    var y = invDet * (-a2 * c1 + a1 * c2);
+    return {a: x, b: y}; 
+  }
+
   function stepAlgorithm() {
     if (algorithmFinished) return;
-    if (d3.selectAll(".lower").size() == 0) {
+    if (d3.selectAll("line.lower").size() == 0) {
       algorithmFinished = true;
       trace("Region is unbounded in the direction of the objective function");
       return;
-    };
+    } else if (d3.selectAll("line.lower").size() == 1) {
+      
+    } else if (d3.selectAll("line.upper").size() == 1) {
+      
+    }
     switch (algorithmStep) {
       case 0:
         trace("Pairing lines");
+        var u = false;
+        for (var i = 0; i < dataset.length; i++) {
+          if (innerProduct(dataset[i], objective[0]) == 0) {
+            dataset[i].b += objective[0].b / 10000;
+            u = true;
+          }
+        }
+        if (u == true) {
+          update();
+        }
+        var lowerSet = new Array();
+        d3.selectAll(".lower").each(function (d, i) {d.r = Math.random(); lowerSet.push(d)});
+        lowerSet.sort(function (a,b) {return a.r - b.r;});
+        while (lowerSet.length > 1) {
+          lowerPairs.push([lowerSet[0], lowerSet[1]]);
+          lowerSet.splice(0,2);
+        }
+        var upperSet = new Array();
+        d3.selectAll(".upper").each(function (d, i) {d.r = Math.random(); upperSet.push(d)});
+        upperSet.sort(function (a,b) {return a.r - b.r;});
+        while (upperSet.length > 1) {
+          upperPairs.push([upperSet[0], upperSet[1]]);
+          upperSet.splice(0,2);
+        }
+        for (var i = lowerPairs.length - 1; i >= 0; i--) {
+          var l1 = lowerPairs[i][0];
+          var l2 = lowerPairs[i][1];
+          if (l1.a * l2.b - l1.b * l2.a == 0) {
+            lowerPairs.splice(i);
+          }
+        }
+        for (var i = upperPairs.length - 1; i >= 0; i--) {
+          var l1 = upperPairs[i][0];
+          var l2 = upperPairs[i][1];
+          if (l1.a * l2.b - l1.b * l2.a == 0) {
+            upperPairs.splice(i);
+          }
+        }
+        var allPairs = lowerPairs.concat(upperPairs);
+        svg.selectAll("circle.pair")
+           .data(allPairs)
+           .enter()
+           .append("circle")
+           .classed("pair", true)
+           .attr("r", 5)
+           .attr("cx", function (d) {return findIntersection(d).a})
+           .attr("cy", function (d) {return findIntersection(d).b})
+           .style("opacity", 0).transition().style("opacity", 1);
+        algorithmStep = 1;
         break;
       case 1:
         trace("Finding median");
+        var perp = {a: objective[0].b, b: -objective[0].a};
+        var data = svg.selectAll("circle.pair").data();
+        data.sort(function (d1, d2) {return innerProduct (findIntersection(d1), perp) - innerProduct (findIntersection(d2), perp);});
+        var median = findIntersection(data[Math.floor(data.length / 2)]);
+        var medianLine = [{a: perp.a, b: perp.b, x: median.a, y: median.b}];
+        svg.selectAll("line.median").data(medianLine).enter().append("line").classed("median", true)
+           .attr("x1", getX1).attr("x2", getX2).attr("y1", getY1).attr("y2", getY2).style("opacity", 0).transition().style("opacity", 1);
+        algorithmStep = 2;
+        break;
+      case 2:
+        trace("Find upper lower line and lower upper lines.");
+        var upperLines = svg.selectAll("line.upper").data();
+        console.log(upperLines);
         break;
     }
   }
