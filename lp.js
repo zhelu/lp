@@ -6,13 +6,15 @@
   var deleteLine = false;
   var _clickX, _clickY;
   var dataset = [];
-  var objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}];
+  var objective = [{base : {x : width / 2, y : height / 2}, vector : {x : 0, y : - height / 10}}];
   var algorithmRunning = false;
   var algorithmFinished = false;
   var algorithmStep = 0;
   var upperPairs = [];
   var lowerPairs = [];
+  var epsilon = 0.0000001;
   
+  // Start over. Reset all data structures.
   function reset() {
     algorithmRunning = false;
     algorithmFinished = false;
@@ -26,66 +28,73 @@
     d3.select("line.median").remove();
   }
 
-  function innerProduct(p1, p2) {
-    return p1.a * p2.a + p1.b * p2.b;
+  // Compute inner product of two vectors.
+  function innerProduct(v1, v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+  }
+
+  // Compute signed-magnitude of cross product of two vectors.
+  function crossProduct(v1, v2) {
+    return v1.x * v2.y - v2.x * v1.y;
   }
 
   function getX1(d) {
-    if (d.b == 0) {
-      return d.x;
+    if (d.vector.y == 0) {
+      return d.base.x;
     }
 
-    if (d.a == 0) {
+    if (d.vector.x == 0) {
       return -10;
     }
 
-    if (d.b > 5 * Math.abs(d.a)) {
-      return (d.x * d.a + d.y * d.b + 10 * d.b) / d.a;
+    if (d.vector.y > 5 * Math.abs(d.vector.x)) {
+      return (d.base.x * d.vector.x + d.base.y * d.vector.y + 10 * d.vector.y) / d.vector.x;
     } else {
       return -10;
     }
   }
 
   function getX2(d) {
-    if (d.b == 0) {
-      return d.x;
+    if (d.vector.y == 0) {
+      return d.base.x;
     }
 
-    if (d.a == 0) {
+    if (d.vector.x == 0) {
       return width + 10;
     }
 
-    if (d.b > 5 * Math.abs(d.a)) {
-      return (d.x * d.a + d.y * d.b - (width + 10) * d.b) / d.a;
+    if (d.vector.y > 5 * Math.abs(d.vector.x)) {
+      return (d.base.x * d.vector.x + d.base.y * d.vector.y - (width + 10) * d.vector.y) / d.vector.x;
     } else {
       return width + 10;
     }
   }
 
   function getY1(d) {
-    if (d.b == 0) {
+    if (d.vector.y == 0) {
       return -10;
     }
 
-    if (d.a == 0) {
+    if (d.vector.x == 0) {
       return d.y;
     }
 
-    return (d.x * d.a + d.y * d.b - getX1(d) * d.a) / d.b;
+    return (d.base.x * d.vector.x + d.base.y * d.vector.y - getX1(d) * d.vector.x) / d.vector.y;
   }
 
   function getY2(d) {
-    if (d.b == 0) {
+    if (d.vector.y == 0) {
       return height + 10;
     }
 
-    if (d.a == 0) {
-      return d.y;
+    if (d.vector.x == 0) {
+      return d.base.y;
     }
 
-    return (d.x * d.a + d.y * d.b - getX2(d) * d.a) / d.b;
+    return (d.base.x * d.vector.x + d.base.y * d.vector.y - getX2(d) * d.vector.x) / d.vector.y;
   }
 
+  // on shift, prepare to delete on click
   function keydown() {
     if (keyAlreadyDown) {
       return false;
@@ -105,6 +114,7 @@
     return svg;
   }
   
+  // on mouse down add new point
   function mousedown() {
     if (algorithmRunning) {
       return;
@@ -115,17 +125,27 @@
     return svg;
   }
 
-  svg.append("defs").append("marker").attr("id", "Triangle").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY", "5").attr("markerUnits", "strokeWidth").attr("markerWidth", "10").attr("markerHeight", "10").attr("orient", "auto").append("path").attr("d", "M 0 0 L 10 5 L 0 10 z").attr("fill", "rgba(128,128,128,0.4)");
-  svg.select("defs").append("marker").attr("id", "Triangle2").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY", "5").attr("markerUnits", "strokeWidth").attr("markerWidth", "5").attr("markerHeight", "5").attr("orient", "auto").append("path").attr("d", "M 0 0 L 10 5 L 0 10 z").attr("fill", "rgba(135,206,235,0.6)");
+  // defined transparent arrows for pointers
+  svg.append("defs")
+     .append("marker").attr("id", "Triangle").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY", "5")
+                      .attr("markerUnits", "strokeWidth").attr("markerWidth", "10").attr("markerHeight", "10")
+                      .attr("orient", "auto").append("path").attr("d", "M 0 0 L 10 5 L 0 10 z")
+                      .attr("fill", "rgba(128,128,128,0.4)");
+  svg.select("defs")
+     .append("marker").attr("id", "Triangle2").attr("viewBox", "0 0 10 10").attr("refX", "0").attr("refY", "5")
+                      .attr("markerUnits", "strokeWidth").attr("markerWidth", "5").attr("markerHeight", "5")
+                      .attr("orient", "auto").append("path").attr("d", "M 0 0 L 10 5 L 0 10 z")
+                      .attr("fill", "rgba(135,206,235,0.6)");
 
+  // handlers for dragging
   function dragmovebase(d) {
     if (algorithmRunning) {
       return;
     }
     d3.event.sourceEvent.stopPropagation
     var p = d3.select(this).datum();
-    p.x = d3.event.x;
-    p.y = d3.event.y;
+    p.base.x = d3.event.x;
+    p.base.y = d3.event.y;
     update();
   }
 
@@ -135,8 +155,8 @@
     }
     d3.event.sourceEvent.stopPropagation
     var p = d3.select(this).datum();
-    p.a = d3.event.x - p.x;
-    p.b = d3.event.y - p.y;
+    p.vector.x = d3.event.x - p.base.x;
+    p.vector.y = d3.event.y - p.base.y;
     update();
   }
 
@@ -184,10 +204,14 @@
       _b = 20;
     }
     dataset.push({
-      x : _clickX,
-      y : _clickY,
-      a : _a + Math.random() / 1000,
-      b : _b,
+      base: {
+        x : _clickX,
+        y : _clickY,
+      },
+      vector : {
+        x : _a + Math.random() / 1000,
+        y : _b,
+      },
       active : true
     });
     update();
@@ -199,8 +223,8 @@
   var dragObjectiveTip = d3.behavior.drag().on("drag", dragmovetip).on("dragstart", dragstartedObjective).on("dragend", dragended);
 
   function updateLineColor(obj) {
-    return obj.classed("upper", function (d) {return (innerProduct (d, objective[0]) > 0 && d.active);})
-              .classed("lower", function (d) {return (innerProduct (d, objective[0]) < 0 && d.active);})
+    return obj.classed("upper", function (d) {return (innerProduct (d.vector, objective[0].vector) > 0 && d.active);})
+              .classed("lower", function (d) {return (innerProduct (d.vector, objective[0].vector) < 0 && d.active);})
               .classed("inactive", function (d) {return !d.active;});
   }
 
@@ -210,37 +234,37 @@
   
   function updatePointer(obj) {
     return obj.attr("x1", function(d) {
-      return d.x;
+      return d.base.x;
     }).attr("y1", function(d) {
-      return d.y;
+      return d.base.y;
     }).attr("x2", function(d) {
-      return d.x + d.a;
+      return d.base.x + d.vector.x;
     }).attr("y2", function(d) {
-      return d.y + d.b;
+      return d.base.y + d.vector.y;
     });
   }
   
   function updateBase(obj, r) {
     var r_ = r;
     return obj.attr("cx", function(d) {
-      return d.x;
+      return d.base.x;
     }).attr("cy", function(d) {
-      return d.y;
+      return d.base.y;
     }).attr("r", r_)
   }
   
   function updateTip(obj, r) {
     var r_ = r;
     return obj.attr("cx", function(d) {
-      return d.x + d.a;
+      return d.base.x + d.vector.x;
     }).attr("cy", function(d) {
-      return d.y + d.b;
+      return d.base.y + d.vector.y;
     }).attr("r", r_);
   }
 
   function update() {
-    var objectiveText = svg.selectAll("text.objective").data(objective).attr("x", function (d) { return d.x;}).attr("y", function (d) { return d.y;});
-    objectiveText.enter().append("text").attr("x", function (d) { return d.x;}).attr("y", function (d) { return d.y;}).text("Objective").classed("objective", true);
+    var objectiveText = svg.selectAll("text.objective").data(objective).attr("x", function (d) { return d.base.x;}).attr("y", function (d) { return d.base.y;});
+    objectiveText.enter().append("text").attr("x", function (d) { return d.base.x;}).attr("y", function (d) { return d.base.y;}).text("Objective").classed("objective", true);
     objectiveText.exit().remove();
     
     // data set
@@ -268,21 +292,23 @@
     updateTip(objectiveTip.enter().append("circle"), 5).classed("objectiveTip", true).call(dragObjectiveTip);
   }
 
+  // add text to trace
   function trace(text) {
     d3.select("#trace").append("p").text(text);
   }
 
+  // find intersection of two pairs of points
   function findIntersection(d) {
-    var a1 = d[0].a;
-    var a2 = d[1].a;
-    var b1 = d[0].b;
-    var b2 = d[1].b;
-    var c1 = d[0].x * a1 + d[0].y * b1;
-    var c2 = d[1].x * a2 + d[1].y * b2;
+    var a1 = d[0].vector.x;
+    var a2 = d[1].vector.x;
+    var b1 = d[0].vector.y;
+    var b2 = d[1].vector.y;
+    var c1 = innerProduct(d[0].base, d[0].vector);
+    var c2 = innerProduct(d[1].base, d[1].vector);
     var invDet = 1 / (a1 * b2 - b1 * a2);
     var x = invDet * (b2 * c1 - b1 * c2);
     var y = invDet * (-a2 * c1 + a1 * c2);
-    return {a: x, b: y}; 
+    return {x: x, y: y}; 
   }
 
   function stepAlgorithm() {
@@ -300,9 +326,10 @@
       case 0:
         trace("Pairing lines");
         var u = false;
+        // tweak any line perpendicular to objective
         for (var i = 0; i < dataset.length; i++) {
-          if (innerProduct(dataset[i], objective[0]) == 0) {
-            dataset[i].b += objective[0].b / 10000;
+          if (innerProduct(dataset[i].vector, objective[0].vector) == 0) {
+            dataset[i].vector.y += objective[0].vector.y / 10000;
             u = true;
           }
         }
@@ -344,18 +371,18 @@
            .append("circle")
            .classed("pair", true)
            .attr("r", 5)
-           .attr("cx", function (d) {return findIntersection(d).a})
-           .attr("cy", function (d) {return findIntersection(d).b})
+           .attr("cx", function (d) {return findIntersection(d).x})
+           .attr("cy", function (d) {return findIntersection(d).y})
            .style("opacity", 0).transition().style("opacity", 1);
         algorithmStep = 1;
         break;
       case 1:
         trace("Finding median");
-        var perp = {a: objective[0].b, b: -objective[0].a};
+        var perp = {x: objective[0].vector.y, y: -objective[0].vector.x};
         var data = svg.selectAll("circle.pair").data();
         data.sort(function (d1, d2) {return innerProduct (findIntersection(d1), perp) - innerProduct (findIntersection(d2), perp);});
         var median = findIntersection(data[Math.floor(data.length / 2)]);
-        var medianLine = [{a: perp.a, b: perp.b, x: median.a, y: median.b}];
+        var medianLine = [{vector : {x: perp.x, y: perp.x}, base : {x: median.x, y: median.y}}];
         svg.selectAll("line.median").data(medianLine).enter().append("line").classed("median", true)
            .attr("x1", getX1).attr("x2", getX2).attr("y1", getY1).attr("y2", getY2).style("opacity", 0).transition().style("opacity", 1);
         algorithmStep = 2;
@@ -377,7 +404,7 @@
   d3.select("#buttonStart").on("click",
                                 function() {
                                   dataset = [];
-                                  objective = [{x : width / 2, y : height / 2, a : 0, b : - height / 10}];
+                                  objective = [{base : {x : width / 2, y : height / 2}, vector : {a : 0, b : - height / 10}}];
                                   update();
                                   reset();
                                 });
