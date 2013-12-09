@@ -13,6 +13,11 @@
   var upperPairs = [];
   var lowerPairs = [];
   var epsilon = 0.0000001;
+
+  // test if float is zero
+  function isZero (f) {
+    return Math.abs(f) < epsilon;
+  }
   
   // Start over. Reset all data structures.
   function reset() {
@@ -39,11 +44,11 @@
   }
 
   function getX1(d) {
-    if (d.vector.y == 0) {
+    if (isZero(d.vector.y)) {
       return d.base.x;
     }
 
-    if (d.vector.x == 0) {
+    if (isZero(d.vector.x)) {
       return -10;
     }
 
@@ -55,11 +60,11 @@
   }
 
   function getX2(d) {
-    if (d.vector.y == 0) {
+    if (isZero(d.vector.y)) {
       return d.base.x;
     }
 
-    if (d.vector.x == 0) {
+    if (isZero(d.vector.x)) {
       return width + 10;
     }
 
@@ -71,11 +76,11 @@
   }
 
   function getY1(d) {
-    if (d.vector.y == 0) {
+    if (isZero(d.vector.y)) {
       return -10;
     }
 
-    if (d.vector.x == 0) {
+    if (isZero(d.vector.x)) {
       return d.y;
     }
 
@@ -83,11 +88,11 @@
   }
 
   function getY2(d) {
-    if (d.vector.y == 0) {
+    if (isZero(d.vector.y)) {
       return height + 10;
     }
 
-    if (d.vector.x == 0) {
+    if (isZero(d.vector.x)) {
       return d.base.y;
     }
 
@@ -199,7 +204,7 @@
     }
     var _a = d3.mouse(this)[0] - _clickX;
     var _b = d3.mouse(this)[1] - _clickY;
-    if (_a == 0 && _b == 0) {
+    if (isZero(_a) && isZero(_b)) {
       _a = 20 + Math.random() / 1000;
       _b = 20;
     }
@@ -328,7 +333,7 @@
         var u = false;
         // tweak any line perpendicular to objective
         for (var i = 0; i < dataset.length; i++) {
-          if (innerProduct(dataset[i].vector, objective[0].vector) == 0) {
+          if (isZero(innerProduct(dataset[i].vector, objective[0].vector))) {
             dataset[i].vector.y += objective[0].vector.y / 10000;
             u = true;
           }
@@ -353,15 +358,31 @@
         for (var i = lowerPairs.length - 1; i >= 0; i--) {
           var l1 = lowerPairs[i][0];
           var l2 = lowerPairs[i][1];
-          if (l1.a * l2.b - l1.b * l2.a == 0) {
+          // if lines are parallel, remove the lower one
+          if (isZero(crossProduct(l1.vector,l2.vector))) {
+            if (innerProduct (l1.base, objective[0].vector) > innerProduct(l2.base, objective[0].vector)) {
+              l1.active = false;
+            } else {
+              l2.active = false;
+            }
+            update();
             lowerPairs.splice(i);
+            trace("Parallel lines paired: removing redundant one");
           }
         }
         for (var i = upperPairs.length - 1; i >= 0; i--) {
           var l1 = upperPairs[i][0];
           var l2 = upperPairs[i][1];
-          if (l1.a * l2.b - l1.b * l2.a == 0) {
+          // if lines are parallel, remove the upper one
+          if (isZero(crossProduct(l1.vector,l2.vector))) {
+            if (innerProduct (l1, objective[0].vector) > innerProduct(l2, objective[0].vector)) {
+              l2.active = false;
+            } else {
+              l1.active = false;
+            }
+            update();
             upperPairs.splice(i);
+            trace("Parallel lines paired: removing redundant one");
           }
         }
         var allPairs = lowerPairs.concat(upperPairs);
@@ -380,17 +401,23 @@
         trace("Finding median");
         var perp = {x: objective[0].vector.y, y: -objective[0].vector.x};
         var data = svg.selectAll("circle.pair").data();
-        data.sort(function (d1, d2) {return innerProduct (findIntersection(d1), perp) - innerProduct (findIntersection(d2), perp);});
-        var median = findIntersection(data[Math.floor(data.length / 2)]);
-        var medianLine = [{vector : {x: perp.x, y: perp.x}, base : {x: median.x, y: median.y}}];
-        svg.selectAll("line.median").data(medianLine).enter().append("line").classed("median", true)
-           .attr("x1", getX1).attr("x2", getX2).attr("y1", getY1).attr("y2", getY2).style("opacity", 0).transition().style("opacity", 1);
-        algorithmStep = 2;
+        if (data.length > 0) {
+          // there is some pairing
+          data.sort(function (d1, d2) {return innerProduct (findIntersection(d1), perp) - innerProduct (findIntersection(d2), perp);});
+          var median = findIntersection(data[Math.floor(data.length / 2)]);
+          var medianLine = [{vector : {x: perp.x, y: perp.y}, base : {x: median.x, y: median.y}}];
+          svg.selectAll("line.median").data(medianLine).enter().append("line").classed("median", true)
+             .attr("x1", getX1).attr("x2", getX2).attr("y1", getY1).attr("y2", getY2).style("opacity", 0).transition().style("opacity", 1);
+          algorithmStep = 2;
+        } else {
+          // no pairings find solution
+        }
         break;
       case 2:
         trace("Find upper lower line and lower upper lines.");
         var upperLines = svg.selectAll("line.upper").data();
         console.log(upperLines);
+        var median = svg.select("line.median").datum();
         break;
     }
   }
@@ -399,12 +426,12 @@
 
   svg.on("click", click).on("mousedown", mousedown);
   d3.select(window).on("keyup", keyup).on("keydown", keydown);
-  d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace");
+  d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
   
   d3.select("#buttonStart").on("click",
                                 function() {
                                   dataset = [];
-                                  objective = [{base : {x : width / 2, y : height / 2}, vector : {a : 0, b : - height / 10}}];
+                                  objective = [{base : {x : width / 2, y : height / 2}, vector : {x : 0, y : - height / 10}}];
                                   update();
                                   reset();
                                 });
