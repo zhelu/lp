@@ -33,9 +33,18 @@
     d3.select("line.median").remove();
   }
 
+  function norm(v) {
+    return Math.sqrt(v.x * v.x + v.y * v.y);
+  }
+
   // Compute inner product of two vectors.
   function innerProduct(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y;
+  }
+  
+  // Computer normalized inner product of two vectors.
+  function innerProductNorm(v1, v2) {
+    return (v1.x * v2.x + v1.y * v2.y) / (norm(v1) * norm(v2));
   }
 
   // Compute signed-magnitude of cross product of two vectors.
@@ -43,6 +52,12 @@
     return v1.x * v2.y - v2.x * v1.y;
   }
 
+  // Compute normalized signed-magnitude of cross product of two vectors.
+  function crossProduct(v1, v2) {
+    return (v1.x * v2.y - v2.x * v1.y) / (norm(v1) * norm(v2));
+  }
+
+  // Line endpoint getters
   function getX1(d) {
     if (isZero(d.vector.y)) {
       return d.base.x;
@@ -311,6 +326,10 @@
     var c1 = innerProduct(d[0].base, d[0].vector);
     var c2 = innerProduct(d[1].base, d[1].vector);
     var invDet = 1 / (a1 * b2 - b1 * a2);
+    if (isZero(invDet)) {
+      // no solution: parallel lines
+      return null;
+    }
     var x = invDet * (b2 * c1 - b1 * c2);
     var y = invDet * (-a2 * c1 + a1 * c2);
     return {x: x, y: y}; 
@@ -323,13 +342,12 @@
       trace("Region is unbounded in the direction of the objective function");
       return;
     } else if (d3.selectAll("line.lower").size() == 1) {
+      trace("Lower envelope has only 1 line. Find minimum point.");
       
-    } else if (d3.selectAll("line.upper").size() == 1) {
-      
-    }
+    } 
     switch (algorithmStep) {
       case 0:
-        trace("Pairing lines");
+        trace("Pairing lines and eliminating parallel pairs");
         var u = false;
         // tweak any line perpendicular to objective
         for (var i = 0; i < dataset.length; i++) {
