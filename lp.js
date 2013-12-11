@@ -408,6 +408,8 @@
       if (steepLineHigh === null) {
         trace("Unbounded feasible region in direction of objective. Infinite solution.");
         algorithmFinished = true;
+      } else if (shallowLineLow === null) {
+        showSolution([findIntersection([lowerLine, steepLineHigh])]);
       } else if (innerProduct (findIntersection([lowerLine, steepLineHigh]), getObj()) <
                  innerProduct (findIntersection([lowerLine, shallowLineLow]), getObj())) {
         trace("No solution. Feasible region does not exist.");
