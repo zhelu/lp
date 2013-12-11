@@ -551,7 +551,7 @@
         // if it's below the upper envelope, it is, otherwise, no solution.
         if (isZero(innerProductNorm(findIntersection([median,lowerInt1]), getObj()) -
                    innerProductNorm(findIntersection([median,lowerInt2]), getObj())) &&
-                   crossProduct(lowerInt1, getObj()) * crossProduct(lowerInt2, getObj()) < 0) {
+                   crossProduct(lowerInt1.vector, getObj()) * crossProduct(lowerInt2.vector, getObj()) < 0) {
           trace("Median crosses cusp of lower envelope. Check feasibility.");
           if (innerProduct(findIntersection([median, upperInt]), getObj()) <
               innerProduct(findIntersection([median, lowerInt1]), getObj())) {
