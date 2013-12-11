@@ -247,6 +247,7 @@
   var dragObjectiveBase = d3.behavior.drag().on("drag", dragmovebase).on("dragstart", dragstartedObjective).on("dragend", dragended);
   var dragObjectiveTip = d3.behavior.drag().on("drag", dragmovetip).on("dragstart", dragstartedObjective).on("dragend", dragended);
 
+  // helper functions for updates
   function updateLineColor(obj) {
     return obj.classed("upper", function (d) {return (innerProduct (d.vector, objective[0].vector) > 0 && d.active);})
               .classed("lower", function (d) {return (innerProduct (d.vector, objective[0].vector) < 0 && d.active);})
@@ -340,6 +341,7 @@
     return {x: x, y: y};
   }
 
+  // display the solution in a red circle
   function showSolution(p) {
     trace("Red circle highlights solution");
     algorithmFinished = true;
@@ -348,6 +350,7 @@
                       .transition().attr("r",5);
   }
 
+  // step through algorithm, main work horse of algorithm here
   function stepAlgorithm() {
     if (algorithmFinished) return;
     if (d3.selectAll("line.lower").size() == 0) {
@@ -391,9 +394,11 @@
                       });
       if (steepLineHigh === null) {
         trace("Unbounded feasible region in direction of objective. Infinite solution.");
+        algorithmFinished = true;
       } else if (innerProduct (findIntersection([lowerLine, steepLineHigh]), objective[0].vector) <
                  innerProduct (findIntersection([lowerLine, shallowLineLow]), objective[0].vector)) {
         trace("No solution. Feasible region does not exist.");
+        algorithmFinished = true;
       } else {
         showSolution([findIntersection([lowerLine, steepLineHigh])]);
       }
@@ -465,14 +470,13 @@
            .enter()
            .append("circle")
            .classed("pair", true)
-           .attr("r", 5)
+           .attr("r", 100)
            .attr("cx", function (d) {return findIntersection(d).x})
            .attr("cy", function (d) {return findIntersection(d).y})
-           .style("opacity", 0).transition().style("opacity", 1);
+           .transition().attr("r", 5);
         algorithmStep = 1;
         break;
       case 1:
-        trace("Finding median");
         var perp = {x: objective[0].vector.y, y: -objective[0].vector.x};
         var data = svg.selectAll("circle.pair").data();
         if (data.length > 0) {
@@ -486,10 +490,14 @@
         } else {
           // no pairings find solution
         }
+        trace("Finding median");
         break;
       case 2:
         trace("Find upper lower line and lower upper lines.");
         var upperLines = svg.selectAll("line.upper").data();
+        var lowerLines = svg.selectAll("line.lower").data();
+        // if top two lower lines intersect median line at the same place, this is potential solution
+        // if it's below the upper envelope, it is, otherwise, no solution.
         var median = svg.select("line.median").datum();
         break;
       case 3:
