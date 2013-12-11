@@ -18,7 +18,12 @@
   function isZero (f) {
     return Math.abs(f) < epsilon;
   }
-  
+
+  function clearTrace() {
+    d3.select("#trace").remove();
+    d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
+  }
+
   // Start over. Reset all data structures.
   function reset() {
     algorithmRunning = false;
@@ -27,10 +32,10 @@
     upperPairs = [];
     lowerPairs = [];
     d3.select("#buttonGo").attr("value", "Go");
-    d3.select("#trace").remove();
-    d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
     d3.selectAll("circle.pair").remove();
+    d3.selectAll("circle.solution").remove();
     d3.select("line.median").remove();
+    clearTrace();
   }
 
   function norm(v) {
@@ -41,7 +46,7 @@
   function innerProduct(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y;
   }
-  
+
   // Computer normalized inner product of two vectors.
   function innerProductNorm(v1, v2) {
     return (v1.x * v2.x + v1.y * v2.y) / (norm(v1) * norm(v2));
@@ -53,7 +58,7 @@
   }
 
   // Compute normalized signed-magnitude of cross product of two vectors.
-  function crossProduct(v1, v2) {
+  function crossProductNorm(v1, v2) {
     return (v1.x * v2.y - v2.x * v1.y) / (norm(v1) * norm(v2));
   }
 
@@ -96,7 +101,7 @@
     }
 
     if (isZero(d.vector.x)) {
-      return d.y;
+      return d.base.y;
     }
 
     return (d.base.x * d.vector.x + d.base.y * d.vector.y - getX1(d) * d.vector.x) / d.vector.y;
@@ -127,13 +132,13 @@
     }
     return svg;
   }
-  
+
   function keyup() {
     keyAlreadyDown = false;
     deleteLine = false;
     return svg;
   }
-  
+
   // on mouse down add new point
   function mousedown() {
     if (algorithmRunning) {
@@ -196,7 +201,7 @@
     }
     d3.select(this).classed("dragging", true);
   }
-  
+
   function dragstartedObjective(d) {
     if (algorithmRunning) {
       return;
@@ -251,7 +256,7 @@
   function updateLine(obj) {
     return updateLineColor(obj.attr("x1", getX1).attr("x2", getX2).attr("y1", getY1).attr("y2", getY2));
   }
-  
+
   function updatePointer(obj) {
     return obj.attr("x1", function(d) {
       return d.base.x;
@@ -263,7 +268,7 @@
       return d.base.y + d.vector.y;
     });
   }
-  
+
   function updateBase(obj, r) {
     var r_ = r;
     return obj.attr("cx", function(d) {
@@ -272,7 +277,7 @@
       return d.base.y;
     }).attr("r", r_)
   }
-  
+
   function updateTip(obj, r) {
     var r_ = r;
     return obj.attr("cx", function(d) {
@@ -286,7 +291,7 @@
     var objectiveText = svg.selectAll("text.objective").data(objective).attr("x", function (d) { return d.base.x;}).attr("y", function (d) { return d.base.y;});
     objectiveText.enter().append("text").attr("x", function (d) { return d.base.x;}).attr("y", function (d) { return d.base.y;}).text("Objective").classed("objective", true);
     objectiveText.exit().remove();
-    
+
     // data set
     var lines = updateLine(svg.selectAll("line.line").data(dataset));
     var basePts = updateBase(svg.selectAll("circle.base").data(dataset), 4);
@@ -302,7 +307,7 @@
     basePts.exit().remove();
     tipPts.exit().remove();
     pointers.exit().remove();
-    
+
     // objective
     var objectiveLine = updatePointer(svg.selectAll("line.objective").data(objective));
     updatePointer(objectiveLine.enter().append("line")).classed("objective", true).attr("marker-end", "url(#Triangle2)");
@@ -332,7 +337,15 @@
     }
     var x = invDet * (b2 * c1 - b1 * c2);
     var y = invDet * (-a2 * c1 + a1 * c2);
-    return {x: x, y: y}; 
+    return {x: x, y: y};
+  }
+
+  function showSolution(p) {
+    trace("Red circle highlights solution");
+    algorithmFinished = true;
+    var solution = svg.selectAll("circle.solution").data(p).enter().append("circle")
+                      .classed("solution", true).attr("cx", function(d) {return d.x;}).attr("cy", function(d) {return d.y}).attr("r", 100)
+                      .transition().attr("r",5);
   }
 
   function stepAlgorithm() {
@@ -342,9 +355,50 @@
       trace("Region is unbounded in the direction of the objective function");
       return;
     } else if (d3.selectAll("line.lower").size() == 1) {
-      trace("Lower envelope has only 1 line. Find minimum point.");
-      
-    } 
+      trace("Lower envelope has only 1 line. Find minimum point on lower envelope.");
+      var lowerLine = d3.select("line.lower").datum();
+      var lowerLineInverse = {x : -lowerLine.vector.x, y : -lowerLine.vector.y};
+      var upperLines = d3.selectAll("line.upper").data();
+      // check steeper and shallower lines
+      if (crossProductNorm (lowerLineInverse, objective[0].vector) > 0) {
+        var steeper = upperLines.filter(function (l) {return crossProductNorm (l.vector, lowerLineInverse) >= 0;});
+        var shallower = upperLines.filter(function (l) {return crossProductNorm (l.vector, lowerLineInverse) < 0;});
+      } else {
+        var steeper = upperLines.filter(function (l) {return crossProductNorm (l.vector, lowerLineInverse) <= 0;});
+        var shallower = upperLines.filter(function (l) {return crossProductNorm (l.vector, lowerLineInverse) > 0;});
+      }
+      var shallowLineLow = null;
+      var steepLineHigh = null;
+      shallower.forEach(function(l) {
+                          if (shallowLineLow === null) {
+                            shallowLineLow = l;
+                          } else {
+                            if (innerProduct (findIntersection ([l,lowerLine]), objective[0].vector) >
+                                innerProduct (findIntersection ([shallowLineLow, lowerLine]), objective[0].vector)) {
+                              shallowLineLow = l;
+                            }
+                          }
+                        });
+      steeper.forEach(function(l) {
+                        if (steepLineHigh === null) {
+                          steepLineHigh = l;
+                        } else {
+                          if (innerProduct (findIntersection ([l,lowerLine]), objective[0].vector) >
+                              innerProduct (findIntersection ([steepLineHigh, lowerLine]), objective[0].vector)) {
+                            steepLineHigh = l;
+                          }
+                        }
+                      });
+      if (steepLineHigh === null) {
+        trace("Unbounded feasible region in direction of objective. Infinite solution.");
+      } else if (innerProduct (findIntersection([lowerLine, steepLineHigh]), objective[0].vector) <
+                 innerProduct (findIntersection([lowerLine, shallowLineLow]), objective[0].vector)) {
+        trace("No solution. Feasible region does not exist.");
+      } else {
+        showSolution([findIntersection([lowerLine, steepLineHigh])]);
+      }
+      return;
+    }
     switch (algorithmStep) {
       case 0:
         trace("Pairing lines and eliminating parallel pairs");
@@ -383,6 +437,7 @@
             } else {
               l2.active = false;
             }
+            svg.selectAll("line.inactive").transition().style("stroke-color", "lightgray !important");
             update();
             lowerPairs.splice(i);
             trace("Parallel lines paired: removing redundant one");
@@ -398,6 +453,7 @@
             } else {
               l1.active = false;
             }
+            svg.selectAll("line.inactive").transition().style("stroke-color", "lightgray !important");
             update();
             upperPairs.splice(i);
             trace("Parallel lines paired: removing redundant one");
@@ -434,8 +490,10 @@
       case 2:
         trace("Find upper lower line and lower upper lines.");
         var upperLines = svg.selectAll("line.upper").data();
-        console.log(upperLines);
         var median = svg.select("line.median").datum();
+        break;
+      case 3:
+        trace("Trim data on side of median farther from solution.");
         break;
     }
   }
@@ -445,7 +503,7 @@
   svg.on("click", click).on("mousedown", mousedown);
   d3.select(window).on("keyup", keyup).on("keydown", keydown);
   d3.select("body").append("div").attr("id", "trace").classed("trace", true).append("b").text("Algorithm trace:");
-  
+
   d3.select("#buttonStart").on("click",
                                 function() {
                                   dataset = [];
@@ -454,9 +512,9 @@
                                   reset();
                                 });
   d3.select("#buttonGo").on("click",
-                            function() { 
-                              algorithmRunning = true; 
-                              stepAlgorithm(); 
+                            function() {
+                              algorithmRunning = true;
+                              stepAlgorithm();
                               this.value = "Step";
                             });
 

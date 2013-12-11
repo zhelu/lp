@@ -21,23 +21,16 @@ line.objective {
 }
 
 line.upper {
-  stroke: red !important;
+  stroke: rgb(128,0,0) !important;
 }
 
 line.lower {
-  stroke: green !important;
+  stroke: rgb(0,128,0) !important;
 }
 
 line.inactive {
   stroke-width: 1px;
   stroke: lightgray !important;
-}
-
-circle.baseObjective {
-  stroke: steelblue;
-  stroke-width: 1.5px;
-  fill: lightsteelblue;
-  
 }
 
 div.trace {
@@ -52,7 +45,20 @@ circle {
 }
 
 circle.pair {
-  fill: rgba(0,0,0,0);
+  fill: rgba(0,0,0,0) !important;
+}
+
+circle.baseObjective {
+  stroke: steelblue;
+  stroke-width: 1.5px;
+  fill: lightsteelblue;
+  
+}
+
+circle.solution {
+  fill: rgba(0,0,0,0) !important;
+  stroke: red !important;
+  stroke-width: 2px !important;
 }
 
 .dragging {
