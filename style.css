@@ -1,19 +1,78 @@
-line.line {
-  stroke: steelblue
+svg {
+  border: 1px solid;
+}
+
+line {
+  stroke: steelblue;
+  stroke-width: 1px;
 }
 
 line.pointer {
-  stroke: steelblue
+  stroke-width: 2px !important;
+  opacity: 0.7;
 }
 
-circle.base {
+line.median {
+  stroke-width: 1px !important;
+}
+
+line.objective {
+  stroke: rgba(135, 205, 235, 0.6) !important;
+  stroke-width: 5px !important;
+}
+
+line.upper {
+  stroke: rgb(128,0,0) !important;
+}
+
+line.lower {
+  stroke: rgb(0,128,0) !important;
+}
+
+line.most {
+  stroke-width: 2px !important;
+}
+
+line.inactive {
+  stroke-width: 1px;
+  stroke: lightgray !important;
+}
+
+div.trace {
+  border : 2px solid;
+  border-radius : 5px;
+}
+
+circle {
+  stroke: steelblue;
+  stroke-width: 1.5px;
+  fill: lightsteelblue;  
+}
+
+circle.pair {
+  stroke: rgb(0,0,0) !important;
+  fill: rgba(0,0,0,0) !important;
+}
+
+circle.baseObjective {
   stroke: steelblue;
   stroke-width: 1.5px;
   fill: lightsteelblue;
+  
 }
 
-circle.tip {
-  stroke: steelblue;
-  stroke-width: 1.5px;
-  fill: lightsteelblue;
+circle.solution {
+  fill: rgba(0,0,0,0) !important;
+  stroke: red !important;
+  stroke-width: 2px !important;
+}
+
+.dragging {
+  fill: salmon !important;
+}
+
+text.objective {
+  font-family: sans-serif;
+  font-size: 20px;
+  fill: rgba(0,0,0,0.5);
 }

@@ -1,17 +1,93 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>Linear Programming and Computational Geometry</title>
 <link rel="stylesheet" type="text/css" href="style.css"/>
-<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="d3.v3.min.js" charset="utf-8"></script>
 </head>
 <body>
-<h1>Linear Programming and Computation Geometry</h1>
+<h1>Linear Programming and Computational Geometry</h1>
 <h2>Zhe Lu</h2>
 <h2>COMP163 Final Project Fall 2013</h2>
+<a href="#demo">Go to demo</a>
+<h3>Introduction</h3>
+<p>We can solve a 2D linear program in linear time. The key is that we need
+to throw away a constant fraction of data away at each step. We'll represent our constraints by a set of halfplanes
+and our objective function by a vector. The solution is the point in the intersection of halfplanes farthest in
+the direction of the objective vector.</p>
+<h3>The algorithm</h3>
+<p>We start by first partitioning the halfplane boundaries into an <font color="#880000">upper envelope</font>
+and a <font color="#008800">lower envelope</font>.
+The <font color="#880000">upper envelope</font> pushes the feasible region in the same direction as the objective vector.
+The <font color="#008800">lower envelope</font> pushes the feasible region against the objective vector.
+If there is no <font color="#008800">lower envelope</font>, then the feasible region is unbounded, and the solution is at infinity.</p>
+<img src="partition.gif" border="0"/>
+<p>Now we pair up <font color="#880000">lower</font> boundaries with <font color="#880000">lower</font>
+boundaries and <font color="#008800">upper</font> boundaries with <font color="#008800">upper</font> boundaries,
+and find the median pair in the direction perpendicular to the objective vector.
+Through the intersection of this pair, we'll draw a line parallel to the objective vector.
+This <font color="#4682B4">median divider</font> separates the data into two sets of pairs.
+We'll eventually discard half the data in one of the two sets.
+This parts thus allows us to throw away a constant fraction of data at every step.</p>
+<p>From the upper envelope, find the upper boundary that intersects the <font color="#4682B4">median divider</font> furthest <i>in the direction
+of the objective</i>. From the lower envelope, find the lower boundary that intersects the <font color="#4682B4">median divider</font> furthest
+<i>in the direction away from the objective</i>. We consider how these two lines intersect the <font color="#4682B4">median divider</font> by cases.</p>
+<ol>
+<li> <b>The <font color="#008800">lower boundary</font> intersects below the <font color="#880000">upper boundary</font></b>
+This means that we're already in the feasible region. The solution is on the side of
+the <font color="#4682B4">median divider</font> where the <font color="#008800">lower boundary</font>
+gets farther away from the objective function.
+<p><img src="median1.gif" border="0"/></p>
+<li> <b>The <font color="#008800">lower boundary</font> intersects above the <font color="#880000">upper boundary</font> and they're parallel</b>
+This means that we're not in the feasible region. Since the two envelopes are convex, and our boundaries are parallel, there's no
+hope of them intersecting, so there is no solution here.
+<p><img src="median2.gif" border="0"/></p>
+<li> <b>The <font color="#008800">lower boundary</font> intersects above the <font color="#880000">upper boundary</font> and they're not parallel</b>
+This means that we're not in the feasible region. There may yet be a feasible region but it's on the side of the
+<font color="#4682B4">median divider</font> where the <font color="#880000">upper boundary</font> and <font color="#008800">lower boundary</font>
+are getting closer together.
+<p><img src="median3.gif" border="0"/></p>
+</ol>
+<p>Now it's time to throw away some data. We'll keep everything on the side of the <font color="#4682B4">median divider</font> 
+where the solution might be. On the other side, look at all the pairs of lines that we made earlier. For <font color="#880000">upper</font>
+pairs, throw away the line that's farther from the direction of the objective as we move toward the <font color="#4682B4">median divider</font>.
+For <font color="#008800">lower</font>
+pairs, throw away the line that's farther in the direction of the objective as we move toward the <font color="#4682B4">median divider</font>.</p>
+<img src="discard.gif" border="0"/>
+<p>Now we're ready to start the next step of the algorithm</p>
+<h3>Base cases</h3>
+<p>We consider two base cases here.</p>
+<ol>
+<li> <b>The <font color="#4682B4">median divider</font> intersects the uppermost cusp on the <font color="#008800">lower envelope</font></b>.
+By cusp, we mean at the two boundary lines with opposite signed slopes intersect. In this case, if a solution exists, it exists at this
+point. We simply check the feasibility of this point.
+<p><img src="base1.gif" border="0"/></p>
+<li> <b>The <font color="#008800">lower envelope</font> has only 1 line.</b>
+The solution, if it exists, is on this boundary, intersecting one of the <font color="#880000">upper boundaries</font>. Steeper
+<font color="#880000">upper boundaries</font> push the solution away from the direction
+of the objective, while shallower <font color="#880000">upper boundaries</font>
+push the solution in the direction of the objective. We find the intersection of the <font color="#008800">lower boundary</font> 
+with steeper <font color="#880000">upper boundary</font> that is farthest away from the direction objective function.
+As long as this point is in the feasible region, it is the solution. Otherwise, there is no solution.
+<p><img src="base2.gif" border="0"/></p>
+</ol>
+<h3>Runtime analysis</h3> 
+<p>At the beginning of the algorithm, we partition the halfplane boundaries in linear time.</p>
+<p>For each step of the algorithm, we do the following work:</p>
+<ul>
+<li> Pair up all lines in linear time
+<li> Find the median in linear time
+<li> Discard a quarter of the points in linear time
+</ul>
+<p>The recurrence relation is thus:</p>
+<img src="rec.gif" border="0"/>
+<p>The Master Theorem tells us that the solution to the recurrence relation is:</p>
+<img src="sol.gif" border="0"/>
+<p>Since the setting up and running the algorithm can both be accomplished in linear time, the overall algorithm is linear!</p>
+<a name="demo"><h3>Demo!</h3></a>
 <div>
 <input id="buttonStart" type="button" value="Start Over"/>
-<input id="buttonObjective" type="button" value="Draw Objective Function"/>
-<input id="buttonGo" type="button" value="Go" disabled/>
+<input id="buttonGo" type="button" value="Go"/>
 </div>
 <script type="text/javascript" src="lp.js"></script>
 </body>
