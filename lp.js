@@ -1,6 +1,6 @@
 (function() {
-  var width = 700;
-  var height = 400;
+  var width = 800;
+  var height = 600;
   var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
   var keyAlreadyDown = false;
   var deleteLine = false;
