@@ -4,10 +4,11 @@ svg {
 
 line {
   stroke: steelblue;
-  stroke-width: 2px;
+  stroke-width: 1px;
 }
 
 line.pointer {
+  stroke-width: 2px !important;
   opacity: 0.7;
 }
 
@@ -28,6 +29,10 @@ line.lower {
   stroke: rgb(0,128,0) !important;
 }
 
+line.most {
+  stroke-width: 2px !important;
+}
+
 line.inactive {
   stroke-width: 1px;
   stroke: lightgray !important;
@@ -45,6 +50,7 @@ circle {
 }
 
 circle.pair {
+  stroke: rgb(0,0,0) !important;
   fill: rgba(0,0,0,0) !important;
 }
 
