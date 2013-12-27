@@ -76,3 +76,15 @@ text.objective {
   font-size: 20px;
   fill: rgba(0,0,0,0.5);
 }
+
+span.upper {
+  color: #880000;
+}
+
+span.lower {
+  color: #008800;
+}
+
+span.median {
+  color: steelblue;
+}

@@ -22,75 +22,77 @@ halfplane (there's another element to indicate which side of the boundary we wan
 we assume that the objective function points down. If it doesn't, we can rotate the coordinate plane so that it does
 point down.</p>
 <h3>The algorithm</h3>
-<p>We start by first partitioning the halfplane boundaries into an <font color="#880000">upper set</font>
-and a <font color="#008800">lower set</font>.
-The <font color="#880000">upper set</font> pushes the feasible region in the same direction as the objective vector,
+<p>We start by first partitioning the halfplane boundaries into an <span class="upper">upper set</span>
+and a <span class="lower">lower set</span>.
+The <span class="upper">upper set</span> pushes the feasible region in the same direction as the objective vector,
 that is, the inner product between the halfplane vector and the objective function is positive.
-The <font color="#008800">lower set</font> pushes the feasible region against the objective vector,
+The <span class="lower">lower set</span> pushes the feasible region against the objective vector,
 that is, the inner product between the halfplane vector and the objective function is negative.
-Together, the intersection of all <font color="#008800">lower sets</font> and all
-<font color="#880000">upper sets</font> respectively define the <font color="#008800">lower envelope</font> and the
-<font color="#880000">upper envelope</font>.
-If there is no <font color="#008800">lower envelope</font>, then the feasible region is unbounded, and the solution is at infinity.</p>
+Together, the intersection of all <span class="lower">lower sets</span> and all
+<span class="upper">upper sets</span> respectively define the <span class="lower">lower envelope</span> and the
+<span class="upper">upper envelope</span>.
+If there is no <span color="#008800">lower envelope</span>, then the feasible region is unbounded, and the solution is at infinity.</p>
 <img src="partition.gif" border="0"/>
-<p>Now we pair up <font color="#880000">lower</font> boundaries with <font color="#880000">lower</font>
-boundaries and <font color="#008800">upper</font> boundaries with <font color="#008800">upper</font> boundaries,
+<p>Now we pair up <span class="lower">lower</span> boundaries with <span class="lower">lower</span>
+boundaries and <span class="upper">upper</span> boundaries with <span class="lower">upper</span> boundaries,
 and find the median pair in the <i>x</i>-direction.
 Through the intersection of this pair, we'll draw a vertical line.
-This <font color="#4682B4">median divider</font> separates the data into two sets of pairs.
+This <span class="median">median divider</span> separates the data into two sets of pairs.
 We'll eventually discard half the lines in one of the two sets.
 This parts thus allows us to throw away a constant fraction of data at every step.</p>
-<p>From the <font color="#880000">upper set</font>,
-find the upper boundary that intersects the <font color="#4682B4">median divider</font> at the lowest <i>y</i> value.
-From the <font color="#008800">lower set</font>,
-find the lower boundary that intersects the <font color="#4682B4">median divider</font> at the highest
-<i>y</i> value. We consider how these two lines intersect the <font color="#4682B4">median divider</font> by cases.</p>
+<p>From the <span class="upper">upper set</span>,
+find the upper boundary that intersects the <span class="median">median divider</span> at the lowest <i>y</i> value.
+From the <span class="lower">lower set</span>,
+find the lower boundary that intersects the <span class="median">median divider</span> at the highest
+<i>y</i> value. We consider how these two lines intersect the <span class="median">median divider</span> by cases.</p>
 <ol>
-<li> <b>The <font color="#008800">lower boundary</font> intersects below the <font color="#880000">upper boundary</font></b>
+<li> <b>The <span class="lower">lower boundary</span> intersects below the <span class="upper">upper boundary</span></b>
 This means that we're already in the feasible region. The solution is on the side of
-the <font color="#4682B4">median divider</font> where the <font color="#008800">lower boundary</font>
-takes on more negative <i>y</i> values. If this <font color="#008800">lower boundary</font>
+the <span class="median">median divider</span> where the <span class="lower">lower boundary</span>
+takes on more negative <i>y</i> values. If this <span class="lower">lower boundary</span>
 is horizontal (zero slope), then technically, we are done.
 <p><img src="median1.gif" border="0"/></p>
-<li> <b>The <font color="#008800">lower boundary</font> intersects above the <font color="#880000">upper boundary</font> and they're parallel</b>
+<li> <b>The <span class="lower">lower boundary</span> intersects above the <span class="upper">upper boundary</span> and they're parallel</b>
 This means that we're not in the feasible region. Since the two envelopes are convex, and our boundaries are parallel, there's no
 hope of them intersecting, so there is no solution here.
 <p><img src="median2.gif" border="0"/></p>
-<li> <b>The <font color="#008800">lower boundary</font> intersects above the <font color="#880000">upper boundary</font> and they're not parallel</b>
+<li> <b>The <span class="lower">lower boundary</span> intersects above the <span class="upper">upper boundary</span> and they're not parallel</b>
 This means that we're not in the feasible region. There may yet be a feasible region but if so, it's on the side of the
-<font color="#4682B4">median divider</font> where the <font color="#880000">upper boundary</font> and <font color="#008800">lower boundary</font>
+<span class="median">median divider</span> where the <span class="upper">upper boundary</span> and <span class="lower">lower boundary</span>
 are getting closer together.
 <p><img src="median3.gif" border="0"/></p>
 </ol>
-<p>Now it's time to throw away some data. We'll keep everything on the side of the <font color="#4682B4">median divider</font> 
+<p>Now it's time to throw away some data. We'll keep everything on the side of the <span class="median">median divider</span> 
 where the solution might be.
 On the other side, look at all the pairs of lines that we made earlier.
 For each pair of lines, one of the lines cannot form the envelope as we move towards the direction of the solution, so we
 can always throw away one of the two lines that form a pair.
-For <font color="#880000">upper</font>
-pairs, throw away the line that takes on larger <i>y</i> values as we move toward the <font color="#4682B4">median divider</font>.
-For <font color="#008800">lower</font>
-pairs, throw away the line that takes on smaller <i>y</i> values as we move toward the <font color="#4682B4">median divider</font>.</p>
+For <span class="upper">upper</span>
+pairs, throw away the line that takes on larger <i>y</i> values as we move toward the <span class="median">median divider</span>.
+For <span class="lower">lower</span>
+pairs, throw away the line that takes on smaller <i>y</i> values as we move toward the <span class="median">median divider</span>.</p>
 <img src="discard.gif" border="0"/>
-<p>Now we're ready to start the next step of the algorithm</p>
+<p>Now we're ready to start the next step of the algorithm., which is to pair up the remaining boundaries from scratch.</p>
 <h3>Base cases</h3>
 <p>We consider two base cases here.</p>
 <ol>
-<li> <b>The <font color="#4682B4">median divider</font> intersects the uppermost cusp on the <font color="#008800">lower envelope</font></b>.
-By cusp, we mean the position where two boundary lines with opposite signed slopes intersect.
+<li> <b>The <span class="median">median divider</span> intersects the cusp on the <span class="lower">lower envelope</span></b>.
+By cusp, we mean the position where two boundary lines with opposite signed slopes intersect (verifiable easily in linear time).
+The cusp is in fact the
+position on the envelope with the most negative <i>y</i> value.
 In this case, if a solution exists, it exists at this
 point. We simply check the feasibility of this point.
 <p><img src="base1.gif" border="0"/></p>
-<li> <b>The <font color="#008800">lower envelope</font> has only 1 line.</b>
-The solution, if it exists, is on this boundary, intersecting one of the <font color="#880000">upper boundaries</font>. 
-<font color="#880000">Upper boundaries</font> with slopes steeper than the sole
-<font color="#008800">lower boundary</font> 
+<li> <b>The <span class="lower">lower envelope</span> has only 1 line.</b>
+The solution, if it exists, is on this boundary, intersecting one of the <span class="upper">upper boundaries</span>. 
+<span class="upper">Upper boundaries</span> with slopes steeper than the sole
+<span class="lower">lower boundary</span> 
 push the solution away from the direction
-of the objective (more positive <i>y</i>), while <font color="#880000">upper boundaries</font> with slopes shallower than the sole
-<font color="#008800">lower boundary</font> 
+of the objective (more positive <i>y</i>), while <span class="upper">upper boundaries</span> with slopes shallower than the sole
+<span class="lower">lower boundary</span> 
 push the solution in the direction of the objective (more negative <i>y</i>).
-We find the intersection of the <font color="#008800">lower boundary</font> 
-with the steeper <font color="#880000">upper boundary</font> that has the highest <i>y</i> value.
+We find the intersection of the <span class="lower">lower boundary</span> 
+with the steeper <span class="upper">upper boundary</span> that has the highest <i>y</i> value.
 As long as this point is in the feasible region, it is the solution. Otherwise, there is no solution.
 <p><img src="base2.gif" border="0"/></p>
 </ol>
